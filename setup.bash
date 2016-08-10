@@ -18,7 +18,7 @@ function clearenv {
 # Create number app server machines
 #
 function createappserver {
-	echo "createappserver -ca"
+	echo "createappserver -a01"
 	for i in $(seq 1 $numapp)
 	do
 		appexist=`docker-machine ls | grep "^app0$i" | wc -l`
@@ -29,7 +29,19 @@ function createappserver {
 			echo machine app0$i exists
 		else
 			echo machine app0$i doesnot exists, == creating ==
-			docker-machine create -d virtualbox app0$i			
+			docker-machine create -d virtualbox app0$i
+			# Set consul ports	
+			VBoxManage modifyvm "con0$i" --natpf1 delete tmi
+			VBoxManage modifyvm "con0$i" --natpf1 "con01,tcp,,8300,,8300"
+			VBoxManage modifyvm "con0$i" --natpf1 "con02,tcp,,8301,,8301"
+			VBoxManage modifyvm "con0$i" --natpf1 "con03,udp,,8301,,8301"
+			VBoxManage modifyvm "con0$i" --natpf1 "con04,tcp,,8302,,8302"
+			VBoxManage modifyvm "con0$i" --natpf1 "con05,udp,,8302,,8302"
+			VBoxManage modifyvm "con0$i" --natpf1 "con06,tcp,,8400,,8400"
+			VBoxManage modifyvm "con0$i" --natpf1 "con07,tcp,,8500,,8500"
+			VBoxManage modifyvm "con0$i" --natpf1 "con08,udp,,8500,,8500"
+			VBoxManage modifyvm "con0$i" --natpf1 "con09,tcp,,8600,,8600"
+			VBoxManage modifyvm "con0$i" --natpf1 "con10,udp,,8600,,8600"
 		fi
 	done
 }
@@ -38,7 +50,7 @@ function createappserver {
 # Create number consul server machines
 #
 function createserver {
-	echo "createserver -cs"
+	echo "createserver -c01"
 	for i in $(seq 1 $numcon)
 	do
 		conexist=`docker-machine ls | grep "^con0$i" | wc -l`
@@ -50,6 +62,19 @@ function createserver {
 		else
 			echo machine con0$i doesnot exists, == creating ==
 			docker-machine create -d virtualbox con0$i			
+			# Set consul ports
+			VBoxManage modifyvm "con0$i" --natpf1 delete tmi
+			VBoxManage modifyvm "con0$i" --natpf1 "con01,tcp,,8300,,8300"
+			VBoxManage modifyvm "con0$i" --natpf1 "con02,tcp,,8301,,8301"
+			VBoxManage modifyvm "con0$i" --natpf1 "con03,udp,,8301,,8301"
+			VBoxManage modifyvm "con0$i" --natpf1 "con04,tcp,,8302,,8302"
+			VBoxManage modifyvm "con0$i" --natpf1 "con05,udp,,8302,,8302"
+			VBoxManage modifyvm "con0$i" --natpf1 "con06,tcp,,8400,,8400"
+			VBoxManage modifyvm "con0$i" --natpf1 "con07,tcp,,8500,,8500"
+			VBoxManage modifyvm "con0$i" --natpf1 "con08,udp,,8500,,8500"
+			VBoxManage modifyvm "con0$i" --natpf1 "con09,tcp,,8600,,8600"
+			VBoxManage modifyvm "con0$i" --natpf1 "con10,udp,,8600,,8600"
+
 		fi
 	done
 }
@@ -59,7 +84,7 @@ function createserver {
 # Start consul app machines, after each stop
 #
 function startappmachine {
-	echo "startappmachine -sa"
+	echo "startappmachine -a02"
 	echo startappmachine
 	for i in $(seq 1 $numapp)
 	do
@@ -81,7 +106,7 @@ function startappmachine {
 # Start consul server machines, after each stop
 #
 function startservermachine {
-	echo "startservermachine -sm"
+	echo "startservermachine -c02"
 	echo startservermachine
 	for i in $(seq 1 $numcon)
 	do
@@ -107,7 +132,7 @@ function startservermachine {
 # - webservice (example)
 #
 function installapp {
-	echo "installapp -ia"
+	echo "installapp -a03"
 	for i in $(seq 1 $numapp)
 	do
 		appexist=`docker-machine ls | grep "^app0$i" | wc -l`		
@@ -136,7 +161,7 @@ function installapp {
 # Install consul server, without starting docker services
 #
 function installserver {
-	echo "installserver -is"
+	echo "installserver -c03"
 	for i in $(seq 1 $numcon)
 	do
 		conexist=`docker-machine ls | grep "^con0$i" | wc -l`		
@@ -160,7 +185,7 @@ function installserver {
 # Start app images, only the first time
 #
 function startappservice {
-	echo "startappservice -as"
+	echo "startappservice -a04"
 	maxexpect=$(($numapp -1))
 	echo maxexpect: $maxexpect
 
@@ -202,7 +227,7 @@ function startappservice {
 # Start consul server, only the first time
 #
 function startserver {
-	echo "startserver -ss"
+	echo "startserver -c04"
 	maxexpect=$(($numcon -1))
 	echo maxexpect: $maxexpect
 	rootagentaddr=""
@@ -222,7 +247,10 @@ function startserver {
 				rootagentaddr=$ipaddr
 			fi
 
-			docker run -d --name=con0$i --net=host -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' consul agent -server -advertise=$ipaddr -bind=$ipaddr -ui -retry-join=$rootagentaddr -bootstrap-expect=$maxexpect -log-level=debug
+			docker run -d --name=con0$i --net=host -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' consul agent -ui -server -advertise=$ipaddr -bind=$ipaddr -ui -retry-join=$rootagentaddr -bootstrap-expect=$maxexpect -log-level=debug
+
+# docker run -d --name=con01 --net=host -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' --expose 8500 consul agent -ui -server -bind=192.168.99.100 -ui -retry-join=192.168.99.100 -bootstrap-expect=1 -log-level=debug
+			
 
 			clearenv
 		else			
@@ -333,19 +361,19 @@ function stopserver {
 }
 
 function syntax () {
-	echo "$1 [-cs] [-ca] [-is] [-ia] [-sa] [-ss] [-sm]"
+	echo "$1 [-a01] [-c01] [-a02] [-c02] [-a03] [-c03] [-a04] [-c04] [--help] "
 	echo " Create (only once)"
-	echo "	-ca create app server"
-	echo "	-cs create consul servers"
+	echo "	-a01 create app server"
+	echo "	-c01 create consul servers"
 	echo " Start machines, after each stop"
-	echo "	-sa start app machine"
-	echo "	-sm start server machine"
+	echo "	-a02 start app machine"
+	echo "	-c02 start server machine"
 	echo " Install software only once)"
-	echo "	-ia install app server software"
-	echo "	-is install consul servers software"
+	echo "	-a03 install app server software"
+	echo "	-c03 install consul servers software"
 	echo " Start docker services on machines for first time"
-	echo "	-as define docker service on app machine"
-	echo "	-ss start docker consul servers"
+	echo "	-a04 define docker service on app machine"
+	echo "	-c04 start docker consul servers"
 	echo " Stop docker services"
 	echo "	-ax stop docker app servers"
 	echo "	-sx stop docker consul servers"
@@ -362,36 +390,35 @@ do
 	key="$1"
 
 	case $key in
-		-ca)
+		-a01)
 			createappserver
 		;;
 
-		-cs)
+		-c01)
 			createserver
 		;;
 
-		-sa)
+		-a02)
 			startappmachine
 		;;
 
-		-sm)
+		-c02)
 			startservermachine
 		;;
 
-
-		-ia)
+		-a03)
 			installapp
 		;;
 		
-		-is)
+		-c03)
 			installserver
 		;;
 	   
-	   	-as)
+	   	-a04)
 			startappservice
 		;;
 
-   		-ss)
+   		-c04)
 			startserver
 		;;
 
@@ -411,7 +438,6 @@ do
 			restartapp
 		;;
 
-
 	    --help)
 			syntax $app			
 			exit
@@ -419,7 +445,7 @@ do
 
 	    *)
 	            # unknown option
-	    	echo unknown option $key
+	    	echo unknown option $key, nothing executed
 	    	syntax $app
 	    ;;
 	esac
