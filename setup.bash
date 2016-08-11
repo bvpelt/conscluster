@@ -31,17 +31,17 @@ function createappserver {
 			echo machine app0$i doesnot exists, == creating ==
 			docker-machine create -d virtualbox app0$i
 			# Set consul ports	
-			VBoxManage modifyvm "con0$i" --natpf1 delete tmi
-			VBoxManage modifyvm "con0$i" --natpf1 "con01,tcp,,8300,,8300"
-			VBoxManage modifyvm "con0$i" --natpf1 "con02,tcp,,8301,,8301"
-			VBoxManage modifyvm "con0$i" --natpf1 "con03,udp,,8301,,8301"
-			VBoxManage modifyvm "con0$i" --natpf1 "con04,tcp,,8302,,8302"
-			VBoxManage modifyvm "con0$i" --natpf1 "con05,udp,,8302,,8302"
-			VBoxManage modifyvm "con0$i" --natpf1 "con06,tcp,,8400,,8400"
-			VBoxManage modifyvm "con0$i" --natpf1 "con07,tcp,,8500,,8500"
-			VBoxManage modifyvm "con0$i" --natpf1 "con08,udp,,8500,,8500"
-			VBoxManage modifyvm "con0$i" --natpf1 "con09,tcp,,8600,,8600"
-			VBoxManage modifyvm "con0$i" --natpf1 "con10,udp,,8600,,8600"
+			#VBoxManage modifyvm "con0$i" --natpf1 delete tmi
+			#VBoxManage modifyvm "con0$i" --natpf1 "con01,tcp,,8300,,8300"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con02,tcp,,8301,,8301"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con03,udp,,8301,,8301"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con04,tcp,,8302,,8302"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con05,udp,,8302,,8302"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con06,tcp,,8400,,8400"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con07,tcp,,8500,,8500"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con08,udp,,8500,,8500"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con09,tcp,,8600,,8600"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con10,udp,,8600,,8600"
 		fi
 	done
 }
@@ -63,17 +63,17 @@ function createserver {
 			echo machine con0$i doesnot exists, == creating ==
 			docker-machine create -d virtualbox con0$i			
 			# Set consul ports
-			VBoxManage modifyvm "con0$i" --natpf1 delete tmi
-			VBoxManage modifyvm "con0$i" --natpf1 "con01,tcp,,8300,,8300"
-			VBoxManage modifyvm "con0$i" --natpf1 "con02,tcp,,8301,,8301"
-			VBoxManage modifyvm "con0$i" --natpf1 "con03,udp,,8301,,8301"
-			VBoxManage modifyvm "con0$i" --natpf1 "con04,tcp,,8302,,8302"
-			VBoxManage modifyvm "con0$i" --natpf1 "con05,udp,,8302,,8302"
-			VBoxManage modifyvm "con0$i" --natpf1 "con06,tcp,,8400,,8400"
-			VBoxManage modifyvm "con0$i" --natpf1 "con07,tcp,,8500,,8500"
-			VBoxManage modifyvm "con0$i" --natpf1 "con08,udp,,8500,,8500"
-			VBoxManage modifyvm "con0$i" --natpf1 "con09,tcp,,8600,,8600"
-			VBoxManage modifyvm "con0$i" --natpf1 "con10,udp,,8600,,8600"
+			#VBoxManage modifyvm "con0$i" --natpf1 delete tmi
+			#VBoxManage modifyvm "con0$i" --natpf1 "con01,tcp,,8300,,8300"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con02,tcp,,8301,,8301"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con03,udp,,8301,,8301"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con04,tcp,,8302,,8302"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con05,udp,,8302,,8302"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con06,tcp,,8400,,8400"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con07,tcp,,8500,,8500"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con08,udp,,8500,,8500"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con09,tcp,,8600,,8600"
+			#VBoxManage modifyvm "con0$i" --natpf1 "con10,udp,,8600,,8600"
 
 		fi
 	done
@@ -209,6 +209,8 @@ function startappservice {
 			# Start consul agent
 			echo "docker run -d --name=app0$i --net=host -e 'CONSUL_LOCAL_CONFIG={"leave_on_terminate": true}' consul agent -bind=$ipaddr -retry-join=$masteripaddr"
 
+			# docker run -d --name=app0$i -h app0$i -p 8300:8300 -p 8301:8301 -p 8301:8301/udp -p 8302:8302/udp -p 8400:8400 -p 8500:8500 -p 172.17.42.1:53:8600/udp -e 'CONSUL_LOCAL_CONFIG={"leave_on_terminate": true}' consul agent -ui -client 0.0.0.0 -bind=$ipaddr -retry-join=$masteripaddr
+
 			# Start registrator
 			echo 
 			echo docker run --name=registrator -d -v /var/run/docker.sock:/tmp/docker.sock gliderlabs/registrator consul://localhost:8500
@@ -250,6 +252,7 @@ function startserver {
 			docker run -d --name=con0$i --net=host -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' consul agent -ui -server -advertise=$ipaddr -bind=$ipaddr -ui -retry-join=$rootagentaddr -bootstrap-expect=$maxexpect -log-level=debug
 
 # docker run -d --name=con01 --net=host -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' --expose 8500 consul agent -ui -server -bind=192.168.99.100 -ui -retry-join=192.168.99.100 -bootstrap-expect=1 -log-level=debug
+# docker run -d --name=con0$i -h con01 -p 8300:8300 -p 8301:8301 -p 8301:8301/udp -p 8302:8302/udp -p 8400:8400 -p 8500:8500 -p 172.17.42.1:53:8600/udp -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' consul agent -ui -server -advertise $ipaddr -bind=$ipaddr -retry-join=$masteripaddr -bootstrap-expect=$maxexpect -log-level=debug
 			
 
 			clearenv
